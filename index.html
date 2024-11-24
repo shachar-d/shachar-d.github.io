@@ -175,7 +175,7 @@
          }
 
          function banksUpdated() {
-            const banks = new Banks();
+            const banks = JSON.parse(localStorage.getItem("CBDB"));
             for(let i=0; i<10; i++){
               for(let j=0; j<3; j++) {
                 let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
