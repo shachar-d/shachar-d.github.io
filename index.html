@@ -155,15 +155,16 @@
                }
             }
          }
+         
          function updateBanks(data){
            let banksJson = localStorage.getItem("banks");
            let banks = null;
            if (!banksJson)
            {
-             banks = JSON.stringify(new Banks());
-             localStorage.setItem("banks", banks);
+             banksJson = JSON.stringify(new Banks());
+             localStorage.setItem("banks", banksJson);
            }
-           banks = JSON.parse(banks);
+           banks = JSON.parse(banksJson);
            for(let i=0; i<10; i++){
              for(let j=0; j<3; j++) {
                let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
@@ -186,7 +187,7 @@
                 banks.banks[i][j] = sel.selectedIndex;
               }
             }
-            localStorage.setItem("banks",JSON.stringify(bnaks));
+            localStorage.setItem("banks",JSON.stringify(banks));
          }
 
          function updateList() {
