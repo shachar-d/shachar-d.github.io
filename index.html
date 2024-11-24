@@ -287,6 +287,8 @@
          }
 
          let print = null;
+         let log = null;
+         let error = null;
 
          async function send(line) {
              const words = line.split(/\s+/).filter(Boolean);
@@ -340,9 +342,9 @@
 
          document.addEventListener("DOMContentLoaded", async function() {
            updateList();
-           const log = document.getElementById("shell");
+           log = document.getElementById("shell");
            print = shell(log, send);
-           const error = message => print(message, "red");
+           error = message => print(message, "red");
            transmit = await midi(chooser("rx"), chooser("tx"), receive);
 
            if (transmit == null)
