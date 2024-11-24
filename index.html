@@ -255,11 +255,11 @@
 
          let transmit = null;
 
-         function sendCommand(command) {
+         async function sendCommand(command) {
            const text = command.split(/\s+/).filter(Boolean);
            const bytes = text.map(x => Number("0x" + x));
            if(transmit) {
-             transmit(bytes);
+             await transmit(bytes);
            }
          }
 
