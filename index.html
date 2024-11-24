@@ -552,6 +552,7 @@
       <div class="tab">
          <button class="tablinks" onclick="openTab(event, 'Banks')">Banks</button>
          <button class="tablinks" onclick="openTab(event, 'Presets')">Presets</button>
+         <button class="tablinks" onclick="openTab(event, 'ExpImp')">Export/Import</button>
          <button class="tablinks" onclick="openTab(event, 'Console')">Midi Console</button>
       </div>
       <div id="Banks" class="tabcontent">
@@ -668,8 +669,12 @@
                          <div id="note" style="display:none;font-size:8;color:red">* Please update the preset before setting it to the pedal</div>
                   </div>
           </div>
-      <div id="Console" class="tabcontent">
-          <main id="shell"></main>
-      </div>
+          <div id="ExpImp" class="tabcontent">
+             <textarea id="jsonText" rows="50" cols="50"></textarea><br>
+             <button onclick="import()">Import</button> <button onclick="export()">Export</button> 
+          </div>
+          <div id="Console" class="tabcontent">
+              <main id="shell"></main>
+          </div>
    </body>
 </html>
