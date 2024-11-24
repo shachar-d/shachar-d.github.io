@@ -120,10 +120,15 @@
            return print;
          }
 
-         class Presets {
+         class CBDB {
            constructor () {
              this.presets = [];
              for(let i=0; i<20; i++) this.presets.push(new Preset("Preset " + (i+1).toString()));
+             this.banks = [];
+             for(let i=0; i<10; i++){
+                 const arr = [0,1,2];
+                 this.banks.push(arr);
+             }
            }
          }
 
@@ -146,23 +151,13 @@
            }
          }
 
-         class Banks {
-            constructor() {
-               this.banks = [];
-               for(let i=0; i<10; i++){
-                 const arr = [0,1,2];
-                 this.banks.push(arr);
-               }
-            }
-         }
-         
          function updateBanks(data){
-           let banksJson = localStorage.getItem("banks");
+           let banksJson = localStorage.getItem("CBDB");
            let banks = null;
            if (!banksJson)
            {
-             banksJson = JSON.stringify(new Banks());
-             localStorage.setItem("banks", banksJson);
+             banksJson = JSON.stringify(new CBDB());
+             localStorage.setItem("CBDB", banksJson);
            }
            banks = JSON.parse(banksJson);
            for(let i=0; i<10; i++){
@@ -187,7 +182,7 @@
                 banks.banks[i][j] = sel.selectedIndex;
               }
             }
-            localStorage.setItem("banks",JSON.stringify(banks));
+            localStorage.setItem("CBDB",JSON.stringify(banks));
          }
 
          async function setBank(bankNum, event) {
@@ -195,7 +190,7 @@
             event.target.style.cursor = "wait";
             for(let i=0; i<3; i++){
                let sel = document.getElementById("bank_" + bankNum.toString() + "_" + (i+1).toString());
-               data = JSON.parse(localStorage.getItem("presets"));
+               data = JSON.parse(localStorage.getItem("CBDB"));
                await setPresetFromPresetData(i+1, data.presets[sel.selectedIndex]);
             }
             event.target.style.cursor = "default";
@@ -205,10 +200,10 @@
          function updateList() {
            const select = document.getElementById("presets");
            select.innerHTML = "";
-           let presets = localStorage.getItem("presets");
+           let presets = localStorage.getItem("CBDB");
            if(!presets) {
-             presets = JSON.stringify(new Presets());
-             localStorage.setItem("presets", presets);
+             presets = JSON.stringify(new CBDB());
+             localStorage.setItem("CBDB", presets);
            }
            const data = JSON.parse(presets);
            for(i=0;i<data.presets.length;i++){
@@ -431,10 +426,10 @@
            p.TONE = document.getElementById("TONE").value;
            p.GAIN = document.getElementById("GAIN").value;
            p.TYPE = document.getElementById("TYPE").value;
-           data = JSON.parse(localStorage.getItem("presets"));
+           data = JSON.parse(localStorage.getItem("CBDB"));
            const index = document.getElementById("presets").selectedIndex;
            data.presets[document.getElementById("presets").selectedIndex] = p;
-           localStorage.setItem("presets",JSON.stringify(data));
+           localStorage.setItem("CBDB",JSON.stringify(data));
            updateList();
            document.getElementById("presets").selectedIndex = index;
          }
