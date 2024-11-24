@@ -277,7 +277,7 @@
                          ",GAIN:" + preset.GAIN.toString() +
                          ",TYPE:" + preset.TYPE.toString();
            send(command);
-           await new Promise(r => setTimeout(r, 100));
+           await new Promise(r => setTimeout(r, 500));
          }
          
          function setPreset(presetNum, event) {
