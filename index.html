@@ -461,6 +461,10 @@
            document.getElementById(tabName).style.display = "block";
            evt.currentTarget.className += " active";
          }
+
+         function Export() {
+            document.getElementById("jsonText").value = JSON.stringify(JSON.parse(localStorage.getItem("CDDB")), null, "\t");
+         }
       </script>
       <style>
          html, body {
@@ -517,7 +521,7 @@
          cursor: pointer;
          padding: 14px 16px;
          transition: 0.3s;
-         font-size: 17px;
+         font-size: 12px;
          }
          /* Change background color of buttons on hover */
          .tab button:hover {
@@ -670,7 +674,7 @@
                   </div>
           </div>
           <div id="ExpImp" class="tabcontent">
-             <textarea id="jsonText" rows="50" cols="50"></textarea><br>
+             <textarea id="jsonText" rows="20" cols="40"></textarea><br>
              <button onclick="import()">Import</button> <button onclick="export()">Export</button> 
           </div>
           <div id="Console" class="tabcontent">
