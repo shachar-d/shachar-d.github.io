@@ -163,7 +163,7 @@
              banks = JSON.stringify(new Banks());
              localStorage.setItem("banks", banks);
            }
-           const data = JSON.parse(banks);
+           banks = JSON.parse(banks);
            for(let i=0; i<10; i++){
              for(let j=0; j<3; j++) {
                let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
@@ -173,7 +173,7 @@
                  option.value = JSON.stringify(data.presets[k]);
                  sel.appendChild(option);
                }
-               sel.selectedIndex = data.banks[i][j];
+               sel.selectedIndex = banks.banks[i][j];
              }
            }
          }
