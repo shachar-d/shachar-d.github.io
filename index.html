@@ -462,11 +462,11 @@
            evt.currentTarget.className += " active";
          }
 
-         function export() {
+         function exportCDDB() {
             document.getElementById("jsonText").value = JSON.stringify(JSON.parse(localStorage.getItem("CDDB")), null, "\t");
          }
 
-         function import() {
+         function importCDDB() {
             try {
                cddb = JSON.parse(document.getElementById("jsonText").value);
                if(cddb.presets.length == 20 && cddb.banks.length == 10)
@@ -688,7 +688,7 @@
           </div>
           <div id="ExpImp" class="tabcontent">
              <textarea id="jsonText" rows="20" cols="40"></textarea><br>
-             <button onclick="import()">Import</button> <button onclick="export()">Export</button> 
+             <button onclick="importCDDB()">Import</button> <button onclick="exportCDDB()">Export</button> 
           </div>
           <div id="Console" class="tabcontent">
               <main id="shell"></main>
