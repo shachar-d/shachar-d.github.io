@@ -312,8 +312,7 @@
                      const command = CubeBaby.genCmd(preset, controlName, value);
                      const text = command.split(/\s+/).filter(Boolean);
                      const bytes = text.map(x => Number("0x" + x));
-                     transmit(bytes);
-                     await new Promise(r => setTimeout(r, 50));
+                     await transmit(bytes);
                }
                return;
              }
