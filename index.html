@@ -262,7 +262,7 @@
            }
          }
 
-         function setPresetFromPresetData(presetNum, preset) {
+         async function setPresetFromPresetData(presetNum, preset) {
            let command = "set " + presetNum.toString() + " VOLUME:" + preset.VOLUME.toString() +
                          ",IR_REV_EN:" + preset.IR_REV_EN.toString() +
                          ",IR_CAB:" + preset.IR_CAB.toString() +
@@ -276,7 +276,7 @@
                          ",TONE:" + preset.TONE.toString() +
                          ",GAIN:" + preset.GAIN.toString() +
                          ",TYPE:" + preset.TYPE.toString();
-           send(command);
+           await send(command);
          }
          
          function setPreset(presetNum, event) {
