@@ -190,7 +190,7 @@
             localStorage.setItem("banks",JSON.stringify(banks));
          }
 
-         async function setBank(bankNum, event) {
+         function setBank(bankNum, event) {
             event.target.disabled = true;
             for(let i=0; i<3; i++){
                let sel = document.getElementById("bank_" + bankNum.toString() + "_" + (i+1).toString());
@@ -262,7 +262,7 @@
            }
          }
 
-         async function setPresetFromPresetData(presetNum, preset) {
+         function setPresetFromPresetData(presetNum, preset) {
            let command = "set " + presetNum.toString() + " VOLUME:" + preset.VOLUME.toString() +
                          ",IR_REV_EN:" + preset.IR_REV_EN.toString() +
                          ",IR_CAB:" + preset.IR_CAB.toString() +
@@ -277,7 +277,6 @@
                          ",GAIN:" + preset.GAIN.toString() +
                          ",TYPE:" + preset.TYPE.toString();
            send(command);
-           await new Promise(r => setTimeout(r, 500));
          }
          
          function setPreset(presetNum, event) {
