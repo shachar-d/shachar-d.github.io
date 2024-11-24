@@ -462,16 +462,16 @@
            evt.currentTarget.className += " active";
          }
 
-         function exportCDDB() {
-            document.getElementById("jsonText").value = JSON.stringify(JSON.parse(localStorage.getItem("CDDB")), null, "\t");
+         function exportCBDB() {
+            document.getElementById("jsonText").value = JSON.stringify(JSON.parse(localStorage.getItem("CBDB")), null, "\t");
          }
 
-         function importCDDB() {
+         function importCBDB() {
             try {
-               cddb = JSON.parse(document.getElementById("jsonText").value);
-               if(cddb.presets.length == 20 && cddb.banks.length == 10)
+               cbdb = JSON.parse(document.getElementById("jsonText").value);
+               if(cbdb.presets.length == 20 && cbdb.banks.length == 10)
                {
-                  localStorage.setItem("CDDB",JSON.stringify(cddb));
+                  localStorage.setItem("CBDB",JSON.stringify(cbdb));
                }
             }
             catch(error) {
@@ -586,7 +586,7 @@
          10: <select id="bank_10_1" onchange="banksUpdated()"></select> <select id="bank_10_2" onchange="banksUpdated()"></select> <select id="bank_10_3" onchange="banksUpdated()"></select> <button onclick="setBank(10, event)">Set 10</button><br>
       </div>
       <div id="Presets" class="tabcontent">
-                  <select id="presets" size="10" style="width:100%" onChange="onSelectPreset(event);"></select>
+                  <select id="presets" style="width:100%" onChange="onSelectPreset(event);"></select>
                   <div align=center id="controls" style="display:none">
                          <table width=400>
                                 <tr>
@@ -688,7 +688,7 @@
           </div>
           <div id="ExpImp" class="tabcontent">
              <textarea id="jsonText" rows="20" cols="40"></textarea><br>
-             <button onclick="importCDDB()">Import</button> <button onclick="exportCDDB()">Export</button> 
+             <button onclick="importCBDB()">Import</button> <button onclick="exportCBDB()">Export</button> 
           </div>
           <div id="Console" class="tabcontent">
               <main id="shell"></main>
