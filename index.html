@@ -253,12 +253,11 @@
 
          let transmit = null;
 
-         async function sendCommand(command) {
+         function sendCommand(command) {
            const text = command.split(/\s+/).filter(Boolean);
            const bytes = text.map(x => Number("0x" + x));
            if(transmit) {
              transmit(bytes);
-             await new Promise(r => setTimeout(r, 50));
            }
          }
 
