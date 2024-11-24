@@ -190,12 +190,12 @@
             localStorage.setItem("banks",JSON.stringify(banks));
          }
 
-         function setBank(bankNum, event) {
+         async function setBank(bankNum, event) {
             event.target.disabled = true;
             for(let i=0; i<3; i++){
                let sel = document.getElementById("bank_" + bankNum.toString() + "_" + (i+1).toString());
                data = JSON.parse(localStorage.getItem("presets"));
-               setPresetFromPresetData(i+1, data.presets[sel.selectedIndex]);
+               await setPresetFromPresetData(i+1, data.presets[sel.selectedIndex]);
             }
             event.target.disabled = false;
         }
