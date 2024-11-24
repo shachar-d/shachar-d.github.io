@@ -146,7 +146,24 @@
            }
          }
 
+         class Banks {
+            constructor() {
+               this.banks = [];
+               for(let i=0; i<10; i++){
+                 const arr = [1,2,3];
+                 this.banks.push(arr);
+               }
+            }
+         }
          function updateBanks(data){
+           let banksJson = localStorage.getItem("banks");
+           let banks = null;
+           if (!banksJson)
+           {
+             banks = JSON.stringify(new Banks());
+             localStorage.setItem("banks", banks);
+           }
+           const data = JSON.parse(banks);
            for(let i=0; i<10; i++){
              for(let j=0; j<3; j++) {
                let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
@@ -156,6 +173,7 @@
                  option.value = JSON.stringify(data.presets[k]);
                  sel.appendChild(option);
                }
+               sel.selectedIndex = data.banks[i][j];
              }
            }
          }
@@ -307,95 +325,7 @@
              error("Warning: no MIDI outputs found");
 
          });
-      </script>
-      <style>
-         html, body {
-         margin: 0;
-         }
-         body {
-         font-family: arial;
-         }
-         header {
-         display: flex;
-         border-bottom: 1px solid #ddd;
-         padding: 4px;
-         font-family: system-ui, sans-serif;
-         }
-         header > * {
-         margin: 4px;
-         }
-         header #title {
-         flex: 1;
-         color: inherit;
-         font-weight: bold;
-         text-decoration: inherit;
-         }
-         header select:empty {
-         visibility: hidden;
-         }
-         main {
-         flex: 1;
-         padding: 0 8px;
-         font-family: monospace;
-         overflow-y: auto;
-         }
-         .ir_rev {
-         background-color: Lime;
-         }
-         .dly_mod {
-         background-color: Aqua;
-         }
-         .tone_amp {
-         background-color: orange;
-         }
-         /* Style the tab */
-         .tab {
-         overflow: hidden;
-         border: 1px solid #ccc;
-         background-color: #f1f1f1;
-         }
-         /* Style the buttons inside the tab */
-         .tab button {
-         background-color: inherit;
-         float: left;
-         border: none;
-         outline: none;
-         cursor: pointer;
-         padding: 14px 16px;
-         transition: 0.3s;
-         font-size: 17px;
-         }
-         /* Change background color of buttons on hover */
-         .tab button:hover {
-         background-color: #ddd;
-         }
-         /* Create an active/current tablink class */
-         .tab button.active {
-         background-color: #ccc;
-         }
-         /* Style the tab content */
-         .tabcontent {
-         display: none;
-         padding: 6px 12px;
-         border: 1px solid #ccc;
-         border-top: none;
-         }
-      </style>
-   </head>
-   <body>
-      <header>
-         <h3 id="title">
-            Cube Baby Preset Editor
-         </h3>
-         <select id="rx" title="MIDI Receive Port" style="display:none"></select>
-         <select id="tx" title="MIDI Transmit Port" style="display:none"></select>
-         <select id="filter" title="Display Filter" style="display:none">
-            <option value="exclusive">System Exclusive</option>
-            <option value="common">Channel &amp; Common</option>
-            <option value="realtime">All Messages</option>
-         </select>
-      </header>
-      <script>
+
          function setVisibility(elementId, isVisible) {
            if(isVisible) {
              document.getElementById(elementId).style.display = "none";
@@ -503,6 +433,93 @@
            evt.currentTarget.className += " active";
          }
       </script>
+      <style>
+         html, body {
+         margin: 0;
+         }
+         body {
+         font-family: arial;
+         }
+         header {
+         display: flex;
+         border-bottom: 1px solid #ddd;
+         padding: 4px;
+         font-family: system-ui, sans-serif;
+         }
+         header > * {
+         margin: 4px;
+         }
+         header #title {
+         flex: 1;
+         color: inherit;
+         font-weight: bold;
+         text-decoration: inherit;
+         }
+         header select:empty {
+         visibility: hidden;
+         }
+         main {
+         flex: 1;
+         padding: 0 8px;
+         font-family: monospace;
+         overflow-y: auto;
+         }
+         .ir_rev {
+         background-color: Lime;
+         }
+         .dly_mod {
+         background-color: Aqua;
+         }
+         .tone_amp {
+         background-color: orange;
+         }
+         /* Style the tab */
+         .tab {
+         overflow: hidden;
+         border: 1px solid #ccc;
+         background-color: #f1f1f1;
+         }
+         /* Style the buttons inside the tab */
+         .tab button {
+         background-color: inherit;
+         float: left;
+         border: none;
+         outline: none;
+         cursor: pointer;
+         padding: 14px 16px;
+         transition: 0.3s;
+         font-size: 17px;
+         }
+         /* Change background color of buttons on hover */
+         .tab button:hover {
+         background-color: #ddd;
+         }
+         /* Create an active/current tablink class */
+         .tab button.active {
+         background-color: #ccc;
+         }
+         /* Style the tab content */
+         .tabcontent {
+         display: none;
+         padding: 6px 12px;
+         border: 1px solid #ccc;
+         border-top: none;
+         }
+      </style>
+   </head>
+   <body>
+      <header>
+         <h3 id="title">
+            Cube Baby Preset Editor
+         </h3>
+         <select id="rx" title="MIDI Receive Port" style="display:none"></select>
+         <select id="tx" title="MIDI Transmit Port" style="display:none"></select>
+         <select id="filter" title="Display Filter" style="display:none">
+            <option value="exclusive">System Exclusive</option>
+            <option value="common">Channel &amp; Common</option>
+            <option value="realtime">All Messages</option>
+         </select>
+      </header>
       <div class="tab">
          <button class="tablinks" onclick="openTab(event, 'Banks')">Banks</button>
          <button class="tablinks" onclick="openTab(event, 'Presets')">Presets</button>
@@ -510,16 +527,16 @@
       </div>
       <div id="Banks" class="tabcontent">
          <h3>Banks</h3>
-         1:&nbsp;&nbsp; <select id="bank_1_1"></select> <select id="bank_1_2"></select> <select id="bank_1_3"></select> <button onclick="setBank(1)">Set</button><br>
-         2:&nbsp;&nbsp; <select id="bank_2_1"></select> <select id="bank_2_2"></select> <select id="bank_2_3"></select> <button onclick="setBank(2)">Set</button><br>
-         3:&nbsp;&nbsp; <select id="bank_3_1"></select> <select id="bank_3_2"></select> <select id="bank_3_3"></select> <button onclick="setBank(3)">Set</button><br>
-         4:&nbsp;&nbsp; <select id="bank_4_1"></select> <select id="bank_4_2"></select> <select id="bank_4_3"></select> <button onclick="setBank(4)">Set</button><br>
-         5:&nbsp;&nbsp; <select id="bank_5_1"></select> <select id="bank_5_2"></select> <select id="bank_5_3"></select> <button onclick="setBank(5)">Set</button><br>
-         6:&nbsp;&nbsp; <select id="bank_6_1"></select> <select id="bank_6_2"></select> <select id="bank_6_3"></select> <button onclick="setBank(6)">Set</button><br>
-         7:&nbsp;&nbsp; <select id="bank_7_1"></select> <select id="bank_7_2"></select> <select id="bank_7_3"></select> <button onclick="setBank(7)">Set</button><br>
-         8:&nbsp;&nbsp; <select id="bank_8_1"></select> <select id="bank_8_2"></select> <select id="bank_8_3"></select> <button onclick="setBank(8)">Set</button><br>
-         9:&nbsp;&nbsp; <select id="bank_9_1"></select> <select id="bank_9_2"></select> <select id="bank_9_3"></select> <button onclick="setBank(9)">Set</button><br>
-         10: <select id="bank_10_1"></select> <select id="bank_10_2"></select> <select id="bank_10_3"></select> <button onclick="setBank(10)">Set</button><br>
+         1:&nbsp;&nbsp; <select id="bank_1_1"></select> <select id="bank_1_2"></select> <select id="bank_1_3"></select> <button onclick="setBank(1)">Set 1</button><br>
+         2:&nbsp;&nbsp; <select id="bank_2_1"></select> <select id="bank_2_2"></select> <select id="bank_2_3"></select> <button onclick="setBank(2)">Set 2</button><br>
+         3:&nbsp;&nbsp; <select id="bank_3_1"></select> <select id="bank_3_2"></select> <select id="bank_3_3"></select> <button onclick="setBank(3)">Set 3</button><br>
+         4:&nbsp;&nbsp; <select id="bank_4_1"></select> <select id="bank_4_2"></select> <select id="bank_4_3"></select> <button onclick="setBank(4)">Set 4</button><br>
+         5:&nbsp;&nbsp; <select id="bank_5_1"></select> <select id="bank_5_2"></select> <select id="bank_5_3"></select> <button onclick="setBank(5)">Set 5</button><br>
+         6:&nbsp;&nbsp; <select id="bank_6_1"></select> <select id="bank_6_2"></select> <select id="bank_6_3"></select> <button onclick="setBank(6)">Set 6</button><br>
+         7:&nbsp;&nbsp; <select id="bank_7_1"></select> <select id="bank_7_2"></select> <select id="bank_7_3"></select> <button onclick="setBank(7)">Set 7</button><br>
+         8:&nbsp;&nbsp; <select id="bank_8_1"></select> <select id="bank_8_2"></select> <select id="bank_8_3"></select> <button onclick="setBank(8)">Set 8</button><br>
+         9:&nbsp;&nbsp; <select id="bank_9_1"></select> <select id="bank_9_2"></select> <select id="bank_9_3"></select> <button onclick="setBank(9)">Set 9</button><br>
+         10: <select id="bank_10_1"></select> <select id="bank_10_2"></select> <select id="bank_10_3"></select> <button onclick="setBank(10)">Set 10</button><br>
       </div>
       <div id="Presets" class="tabcontent">
                   <select id="presets" size="10" style="width:100%" onChange="onSelectPreset(event);"></select>
