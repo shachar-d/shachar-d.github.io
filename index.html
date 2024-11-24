@@ -192,13 +192,13 @@
 
          async function setBank(bankNum, event) {
             event.target.disabled = true;
-            document.body.style.cursor = "wait";
+            event.target.style.cursor = "wait";
             for(let i=0; i<3; i++){
                let sel = document.getElementById("bank_" + bankNum.toString() + "_" + (i+1).toString());
                data = JSON.parse(localStorage.getItem("presets"));
                await setPresetFromPresetData(i+1, data.presets[sel.selectedIndex]);
             }
-            document.body.style.cursor = "default";
+            event.target.style.cursor = "default";
             event.target.disabled = false;
         }
          
@@ -259,7 +259,8 @@
            const text = command.split(/\s+/).filter(Boolean);
            const bytes = text.map(x => Number("0x" + x));
            if(transmit) {
-             await transmit(bytes);
+             transmit(bytes);
+             await new Promise(r => setTimeout(r, 50));
            }
          }
 
@@ -282,10 +283,10 @@
          
          async function setPreset(presetNum, event) {
            event.target.disabled = true;
-           document.body.style.cursor = "wait";
+           event.target.style.cursor = "wait";
            const preset = JSON.parse(document.getElementById("presets").value);
            await setPresetFromPresetData(presetNum, preset);
-           document.body.style.cursor = "default";
+           event.target.style.cursor = "default";
            event.target.disabled = false;
          }
 
