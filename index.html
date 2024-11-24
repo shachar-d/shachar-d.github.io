@@ -462,8 +462,21 @@
            evt.currentTarget.className += " active";
          }
 
-         function Export() {
+         function export() {
             document.getElementById("jsonText").value = JSON.stringify(JSON.parse(localStorage.getItem("CDDB")), null, "\t");
+         }
+
+         function import() {
+            try {
+               cddb = JSON.parse(document.getElementById("jsonText").value);
+               if(cddb.presets.length == 20 && cddb.banks.length == 10)
+               {
+                  localStorage.setItem("CDDB",JSON.stringify(cddb));
+               }
+            }
+            catch(error) {
+               alert("Invalid JSON format!");
+            }
          }
       </script>
       <style>
