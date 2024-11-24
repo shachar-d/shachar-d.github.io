@@ -152,14 +152,14 @@
          }
 
          function updateBanks(data){
-           let banksJson = localStorage.getItem("CBDB");
-           let banks = null;
-           if (!banksJson)
+           let cbdbJson = localStorage.getItem("CBDB");
+           let cbdb = null;
+           if (!cbdbJson)
            {
-             banksJson = JSON.stringify(new CBDB());
-             localStorage.setItem("CBDB", banksJson);
+             cbdbJson = JSON.stringify(new CBDB());
+             localStorage.setItem("CBDB", cbdbJson);
            }
-           banks = JSON.parse(banksJson);
+           cbdb = JSON.parse(cbdbJson);
            for(let i=0; i<10; i++){
              for(let j=0; j<3; j++) {
                let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
@@ -169,20 +169,20 @@
                  option.value = JSON.stringify(data.presets[k]);
                  sel.appendChild(option);
                }
-               sel.selectedIndex = banks.banks[i][j];
+               sel.selectedIndex = cbdb.banks[i][j];
              }
            }
          }
 
          function banksUpdated() {
-            const banks = JSON.parse(localStorage.getItem("CBDB"));
+            const cbdb = JSON.parse(localStorage.getItem("CBDB"));
             for(let i=0; i<10; i++){
               for(let j=0; j<3; j++) {
                 let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
-                banks.banks[i][j] = sel.selectedIndex;
+                cbdb.banks[i][j] = sel.selectedIndex;
               }
             }
-            localStorage.setItem("CBDB",JSON.stringify(banks));
+            localStorage.setItem("CBDB",JSON.stringify(cbdb));
          }
 
          async function setBank(bankNum, event) {
@@ -200,12 +200,12 @@
          function updateList() {
            const select = document.getElementById("presets");
            select.innerHTML = "";
-           let presets = localStorage.getItem("CBDB");
-           if(!presets) {
-             presets = JSON.stringify(new CBDB());
-             localStorage.setItem("CBDB", presets);
+           let cbdb = localStorage.getItem("CBDB");
+           if(!cbdb) {
+             cbdb = JSON.stringify(new CBDB());
+             localStorage.setItem("CBDB", cbdb);
            }
-           const data = JSON.parse(presets);
+           const data = JSON.parse(cbdb);
            for(i=0;i<data.presets.length;i++){
              const option = new Option(data.presets[i].NAME);
              option.value = JSON.stringify(data.presets[i]);
