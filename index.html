@@ -190,6 +190,16 @@
             localStorage.setItem("banks",JSON.stringify(banks));
          }
 
+         function setBank(bankNum, event) {
+            event.target.disabled = true;
+            for(let i=0; i<3; i++){
+               let sel = document.getElementById("bank_" + bankNum.toString() + "_" + (i+1).toString());
+               data = JSON.parse(localStorage.getItem("presets"));
+               setPresetByPresetData(i+1, data.presets[sel.selectedIndex]);
+            }
+            event.target.disabled = false;
+        }
+         
          function updateList() {
            const select = document.getElementById("presets");
            select.innerHTML = "";
@@ -252,8 +262,7 @@
            }
          }
 
-         async function setPreset(presetNum) {
-           const preset = JSON.parse(document.getElementById("presets").value);
+         function setPresetFromPresetData(presetNum, preset) {
            let command = "set " + presetNum.toString() + " VOLUME:" + preset.VOLUME.toString() +
                          ",IR_REV_EN:" + preset.IR_REV_EN.toString() +
                          ",IR_CAB:" + preset.IR_CAB.toString() +
@@ -268,6 +277,13 @@
                          ",GAIN:" + preset.GAIN.toString() +
                          ",TYPE:" + preset.TYPE.toString();
            send(command);
+         }
+         
+         function setPreset(presetNum, event) {
+           event.target.disabled = true;
+           const preset = JSON.parse(document.getElementById("presets").value);
+           setPresetFromPresetData(presetNum, preset);
+           event.target.disabled = false;
          }
 
          let print = null;
@@ -539,16 +555,16 @@
       </div>
       <div id="Banks" class="tabcontent">
          <h3>Banks</h3>
-         1:&nbsp;&nbsp; <select id="bank_1_1" onchange="banksUpdated()"></select> <select id="bank_1_2" onchange="banksUpdated()"></select> <select id="bank_1_3" onchange="banksUpdated()"></select> <button onclick="setBank(1)">Set 1</button><br>
-         2:&nbsp;&nbsp; <select id="bank_2_1" onchange="banksUpdated()"></select> <select id="bank_2_2" onchange="banksUpdated()"></select> <select id="bank_2_3" onchange="banksUpdated()"></select> <button onclick="setBank(2)">Set 2</button><br>
-         3:&nbsp;&nbsp; <select id="bank_3_1" onchange="banksUpdated()"></select> <select id="bank_3_2" onchange="banksUpdated()"></select> <select id="bank_3_3" onchange="banksUpdated()"></select> <button onclick="setBank(3)">Set 3</button><br>
-         4:&nbsp;&nbsp; <select id="bank_4_1" onchange="banksUpdated()"></select> <select id="bank_4_2" onchange="banksUpdated()"></select> <select id="bank_4_3" onchange="banksUpdated()"></select> <button onclick="setBank(4)">Set 4</button><br>
-         5:&nbsp;&nbsp; <select id="bank_5_1" onchange="banksUpdated()"></select> <select id="bank_5_2" onchange="banksUpdated()"></select> <select id="bank_5_3" onchange="banksUpdated()"></select> <button onclick="setBank(5)">Set 5</button><br>
-         6:&nbsp;&nbsp; <select id="bank_6_1" onchange="banksUpdated()"></select> <select id="bank_6_2" onchange="banksUpdated()"></select> <select id="bank_6_3" onchange="banksUpdated()"></select> <button onclick="setBank(6)">Set 6</button><br>
-         7:&nbsp;&nbsp; <select id="bank_7_1" onchange="banksUpdated()"></select> <select id="bank_7_2" onchange="banksUpdated()"></select> <select id="bank_7_3" onchange="banksUpdated()"></select> <button onclick="setBank(7)">Set 7</button><br>
-         8:&nbsp;&nbsp; <select id="bank_8_1" onchange="banksUpdated()"></select> <select id="bank_8_2" onchange="banksUpdated()"></select> <select id="bank_8_3" onchange="banksUpdated()"></select> <button onclick="setBank(8)">Set 8</button><br>
-         9:&nbsp;&nbsp; <select id="bank_9_1" onchange="banksUpdated()"></select> <select id="bank_9_2" onchange="banksUpdated()"></select> <select id="bank_9_3" onchange="banksUpdated()"></select> <button onclick="setBank(9)">Set 9</button><br>
-         10: <select id="bank_10_1" onchange="banksUpdated()"></select> <select id="bank_10_2" onchange="banksUpdated()"></select> <select id="bank_10_3" onchange="banksUpdated()"></select> <button onclick="setBank(10)">Set 10</button><br>
+         1:&nbsp;&nbsp; <select id="bank_1_1" onchange="banksUpdated()"></select> <select id="bank_1_2" onchange="banksUpdated()"></select> <select id="bank_1_3" onchange="banksUpdated()"></select> <button onclick="setBank(1, event)">Set 1</button><br>
+         2:&nbsp;&nbsp; <select id="bank_2_1" onchange="banksUpdated()"></select> <select id="bank_2_2" onchange="banksUpdated()"></select> <select id="bank_2_3" onchange="banksUpdated()"></select> <button onclick="setBank(2, event)">Set 2</button><br>
+         3:&nbsp;&nbsp; <select id="bank_3_1" onchange="banksUpdated()"></select> <select id="bank_3_2" onchange="banksUpdated()"></select> <select id="bank_3_3" onchange="banksUpdated()"></select> <button onclick="setBank(3, event)">Set 3</button><br>
+         4:&nbsp;&nbsp; <select id="bank_4_1" onchange="banksUpdated()"></select> <select id="bank_4_2" onchange="banksUpdated()"></select> <select id="bank_4_3" onchange="banksUpdated()"></select> <button onclick="setBank(4, event)">Set 4</button><br>
+         5:&nbsp;&nbsp; <select id="bank_5_1" onchange="banksUpdated()"></select> <select id="bank_5_2" onchange="banksUpdated()"></select> <select id="bank_5_3" onchange="banksUpdated()"></select> <button onclick="setBank(5, event)">Set 5</button><br>
+         6:&nbsp;&nbsp; <select id="bank_6_1" onchange="banksUpdated()"></select> <select id="bank_6_2" onchange="banksUpdated()"></select> <select id="bank_6_3" onchange="banksUpdated()"></select> <button onclick="setBank(6, event)">Set 6</button><br>
+         7:&nbsp;&nbsp; <select id="bank_7_1" onchange="banksUpdated()"></select> <select id="bank_7_2" onchange="banksUpdated()"></select> <select id="bank_7_3" onchange="banksUpdated()"></select> <button onclick="setBank(7, event)">Set 7</button><br>
+         8:&nbsp;&nbsp; <select id="bank_8_1" onchange="banksUpdated()"></select> <select id="bank_8_2" onchange="banksUpdated()"></select> <select id="bank_8_3" onchange="banksUpdated()"></select> <button onclick="setBank(8, event)">Set 8</button><br>
+         9:&nbsp;&nbsp; <select id="bank_9_1" onchange="banksUpdated()"></select> <select id="bank_9_2" onchange="banksUpdated()"></select> <select id="bank_9_3" onchange="banksUpdated()"></select> <button onclick="setBank(9, event)">Set 9</button><br>
+         10: <select id="bank_10_1" onchange="banksUpdated()"></select> <select id="bank_10_2" onchange="banksUpdated()"></select> <select id="bank_10_3" onchange="banksUpdated()"></select> <button onclick="setBank(10, event)">Set 10</button><br>
       </div>
       <div id="Presets" class="tabcontent">
                   <select id="presets" size="10" style="width:100%" onChange="onSelectPreset(event);"></select>
@@ -644,9 +660,9 @@
                          Preset name: <input type=text id="NAME"></input>
                          <button type=button onClick="onUpdatePreset();presetUpdated();">Update</button>
                          <br><br>
-                         <button type=button id="set_preset_a" onClick="setPreset(1);">Set to preset A</button>
-                         <button type=button id="set_preset_b" onClick="setPreset(2);">Set to preset B</button>
-                         <button type=button id="set_preset_c" onClick="setPreset(3);">Set to preset C</button>
+                         <button type=button id="set_preset_a" onClick="setPreset(1, event);">Set to preset A</button>
+                         <button type=button id="set_preset_b" onClick="setPreset(2, event);">Set to preset B</button>
+                         <button type=button id="set_preset_c" onClick="setPreset(3, event);">Set to preset C</button>
                          <br>
                          <div id="note" style="display:none;font-size:8;color:red">* Please update the preset before setting it to the pedal</div>
                   </div>
