@@ -195,7 +195,7 @@
             for(let i=0; i<3; i++){
                let sel = document.getElementById("bank_" + bankNum.toString() + "_" + (i+1).toString());
                data = JSON.parse(localStorage.getItem("presets"));
-               setPresetByPresetData(i+1, data.presets[sel.selectedIndex]);
+               setPresetFromPresetData(i+1, data.presets[sel.selectedIndex]);
             }
             event.target.disabled = false;
         }
