@@ -178,6 +178,17 @@
            }
          }
 
+         function banksUpdated() {
+            const banks = new Banks();
+            for(let i=0; i<10; i++){
+              for(let j=0; j<3; j++) {
+                let sel = document.getElementById("bank_" + (i+1).toString() + "_" + (j+1).toString());
+                banks.banks[i][j] = sel.selectedIndex;
+              }
+            }
+            localStorage.setItem("banks",JSON.stringify(bnaks));
+         }
+
          function updateList() {
            const select = document.getElementById("presets");
            select.innerHTML = "";
@@ -527,16 +538,16 @@
       </div>
       <div id="Banks" class="tabcontent">
          <h3>Banks</h3>
-         1:&nbsp;&nbsp; <select id="bank_1_1"></select> <select id="bank_1_2"></select> <select id="bank_1_3"></select> <button onclick="setBank(1)">Set 1</button><br>
-         2:&nbsp;&nbsp; <select id="bank_2_1"></select> <select id="bank_2_2"></select> <select id="bank_2_3"></select> <button onclick="setBank(2)">Set 2</button><br>
-         3:&nbsp;&nbsp; <select id="bank_3_1"></select> <select id="bank_3_2"></select> <select id="bank_3_3"></select> <button onclick="setBank(3)">Set 3</button><br>
-         4:&nbsp;&nbsp; <select id="bank_4_1"></select> <select id="bank_4_2"></select> <select id="bank_4_3"></select> <button onclick="setBank(4)">Set 4</button><br>
-         5:&nbsp;&nbsp; <select id="bank_5_1"></select> <select id="bank_5_2"></select> <select id="bank_5_3"></select> <button onclick="setBank(5)">Set 5</button><br>
-         6:&nbsp;&nbsp; <select id="bank_6_1"></select> <select id="bank_6_2"></select> <select id="bank_6_3"></select> <button onclick="setBank(6)">Set 6</button><br>
-         7:&nbsp;&nbsp; <select id="bank_7_1"></select> <select id="bank_7_2"></select> <select id="bank_7_3"></select> <button onclick="setBank(7)">Set 7</button><br>
-         8:&nbsp;&nbsp; <select id="bank_8_1"></select> <select id="bank_8_2"></select> <select id="bank_8_3"></select> <button onclick="setBank(8)">Set 8</button><br>
-         9:&nbsp;&nbsp; <select id="bank_9_1"></select> <select id="bank_9_2"></select> <select id="bank_9_3"></select> <button onclick="setBank(9)">Set 9</button><br>
-         10: <select id="bank_10_1"></select> <select id="bank_10_2"></select> <select id="bank_10_3"></select> <button onclick="setBank(10)">Set 10</button><br>
+         1:&nbsp;&nbsp; <select id="bank_1_1" onselect="banksUpdated()"></select> <select id="bank_1_2" onselect="banksUpdated()"></select> <select id="bank_1_3" onselect="banksUpdated()"></select> <button onclick="setBank(1)">Set 1</button><br>
+         2:&nbsp;&nbsp; <select id="bank_2_1" onselect="banksUpdated()"></select> <select id="bank_2_2" onselect="banksUpdated()"></select> <select id="bank_2_3" onselect="banksUpdated()"></select> <button onclick="setBank(2)">Set 2</button><br>
+         3:&nbsp;&nbsp; <select id="bank_3_1" onselect="banksUpdated()"></select> <select id="bank_3_2" onselect="banksUpdated()"></select> <select id="bank_3_3" onselect="banksUpdated()"></select> <button onclick="setBank(3)">Set 3</button><br>
+         4:&nbsp;&nbsp; <select id="bank_4_1" onselect="banksUpdated()"></select> <select id="bank_4_2" onselect="banksUpdated()"></select> <select id="bank_4_3" onselect="banksUpdated()"></select> <button onclick="setBank(4)">Set 4</button><br>
+         5:&nbsp;&nbsp; <select id="bank_5_1" onselect="banksUpdated()"></select> <select id="bank_5_2" onselect="banksUpdated()"></select> <select id="bank_5_3" onselect="banksUpdated()"></select> <button onclick="setBank(5)">Set 5</button><br>
+         6:&nbsp;&nbsp; <select id="bank_6_1" onselect="banksUpdated()"></select> <select id="bank_6_2" onselect="banksUpdated()"></select> <select id="bank_6_3" onselect="banksUpdated()"></select> <button onclick="setBank(6)">Set 6</button><br>
+         7:&nbsp;&nbsp; <select id="bank_7_1" onselect="banksUpdated()"></select> <select id="bank_7_2" onselect="banksUpdated()"></select> <select id="bank_7_3" onselect="banksUpdated()"></select> <button onclick="setBank(7)">Set 7</button><br>
+         8:&nbsp;&nbsp; <select id="bank_8_1" onselect="banksUpdated()"></select> <select id="bank_8_2" onselect="banksUpdated()"></select> <select id="bank_8_3" onselect="banksUpdated()"></select> <button onclick="setBank(8)">Set 8</button><br>
+         9:&nbsp;&nbsp; <select id="bank_9_1" onselect="banksUpdated()"></select> <select id="bank_9_2" onselect="banksUpdated()"></select> <select id="bank_9_3" onselect="banksUpdated()"></select> <button onclick="setBank(9)">Set 9</button><br>
+         10: <select id="bank_10_1" onselect="banksUpdated()"></select> <select id="bank_10_2" onselect="banksUpdated()"></select> <select id="bank_10_3" onselect="banksUpdated()"></select> <button onclick="setBank(10)">Set 10</button><br>
       </div>
       <div id="Presets" class="tabcontent">
                   <select id="presets" size="10" style="width:100%" onChange="onSelectPreset(event);"></select>
