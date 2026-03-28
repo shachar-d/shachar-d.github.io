@@ -41,14 +41,16 @@
     
         // 1. Check for known devices on page load
         window.onload = async () => {
-            if (navigator.bluetooth && navigator.bluetooth.getDevices) {
-                const devices = await navigator.bluetooth.getDevices();
-                const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
-                if (myDevice) {
-                    connectBtn.innerText = "Reconnect to ESP32";
-                    // Start watching for signal strength immediately
-                    startRSSIMonitor(myDevice);
+            const devices = await navigator.bluetooth.getDevices();
+            const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
+            
+            if (myDevice) {
+                // If the device is technically "connected" to the OS but not our page,
+                // we try to disconnect it first to reset the state.
+                if (myDevice.gatt.connected) {
+                    await myDevice.gatt.disconnect();
                 }
+                connectBtn.innerText = "Reconnect to ESP32";
             }
         };
     
