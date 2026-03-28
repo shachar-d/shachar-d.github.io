@@ -31,6 +31,64 @@
 <body>
 
 <div class="container">
+    <div id="statusHeader" class="hidden" style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.9rem;">
+    <span id="connLabel">Connected</span>
+    <span id="rssiVal">Signal: -- dBm</span>
+    </div>
+    
+    <script>
+        let watchTimer;
+    
+        // 1. Check for known devices on page load
+        window.onload = async () => {
+            if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+                const devices = await navigator.bluetooth.getDevices();
+                const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
+                if (myDevice) {
+                    connectBtn.innerText = "Reconnect to ESP32";
+                    // Start watching for signal strength immediately
+                    startRSSIMonitor(myDevice);
+                }
+            }
+        };
+    
+        async function startRSSIMonitor(device) {
+            try {
+                // watchAdvertisements enables reading RSSI from the device
+                await device.watchAdvertisements();
+                device.addEventListener('advertisementreceived', (event) => {
+                    document.getElementById('rssiVal').innerText = `Signal: ${event.rssi} dBm`;
+                    // If we see the device is nearby, we could prompt the user
+                });
+            } catch (e) { console.log("RSSI Watch not supported or failed"); }
+        }
+    
+        connectBtn.onclick = async () => {
+            try {
+                const devices = await navigator.bluetooth.getDevices();
+                let device = devices.find(d => d.name === 'ESP32_EQ_Audio');
+    
+                if (!device) {
+                    device = await navigator.bluetooth.requestDevice({
+                        filters: [{ name: 'ESP32_EQ_Audio' }],
+                        optionalServices: [SERVICE_UUID]
+                    });
+                }
+    
+                const server = await device.gatt.connect();
+                bleChar = await (await server.getPrimaryService(SERVICE_UUID)).getCharacteristic(CHAR_UUID);
+                
+                document.getElementById('statusHeader').classList.remove('hidden');
+                connectBtn.classList.add('hidden');
+                mainInterface.classList.remove('hidden');
+    
+                device.addEventListener('gattserverdisconnected', () => {
+                    location.reload(); // Refreshing on hard disconnect often helps reset the state
+                });
+    
+            } catch (e) { alert("Connect Error: " + e); }
+        };
+    </script>
     <button id="connectBtn">Connect to ESP32</button>
 
     <div id="mainInterface" class="hidden">
