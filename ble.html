@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 EQ Controller</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        button { padding: 20px; font-size: 20px; cursor: pointer; border-radius: 10px; }
+        #status { margin-top: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>ESP32 Audio Controller</h1>
+    <button id="connectBtn">Connect to ESP32</button>
+    <button id="toggleBtn" disabled>Toggle Equalizer</button>
+    <div id="status">Status: Disconnected</div>
+
+    <script>
+        const SERVICE_UUID = '12345678-1234-5678-1234-56789abcdef0';
+        const CHAR_UUID    = '12345678-1234-5678-1234-56789abcdef1';
+
+        let bleChar;
+
+        document.getElementById('connectBtn').onclick = async () => {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'ESP32_EQ_Audio' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+                
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                bleChar = await service.getCharacteristic(CHAR_UUID);
+                
+                document.getElementById('status').innerText = "Status: Connected!";
+                document.getElementById('toggleBtn').disabled = false;
+            } catch (error) {
+                console.log(error);
+                alert("Connection failed: " + error);
+            }
+        };
+
+        document.getElementById('toggleBtn').onclick = async () => {
+            if (bleChar) {
+                // Send '1' to toggle the EQ
+                const data = new Uint8Array([1]);
+                await bleChar.writeValue(data);
+            }
+        };
+    </script>
+</body>
+</html>
