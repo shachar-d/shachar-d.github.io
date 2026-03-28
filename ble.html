@@ -10,7 +10,6 @@
         .container { width: 90%; max-width: 450px; background: var(--card); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
         .hidden { display: none !important; }
         button#connectBtn { width: 100%; padding: 18px; font-size: 1.2rem; font-weight: bold; color: white; background: var(--primary); border: none; border-radius: 12px; cursor: pointer; }
-        
         .switch-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 12px; }
         .switch { position: relative; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -18,9 +17,7 @@
         .slider-switch:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider-switch { background-color: var(--primary); }
         input:checked + .slider-switch:before { transform: translateX(26px); }
-
         select { width: 100%; padding: 12px; background: #333; color: white; border: 1px solid #444; border-radius: 10px; font-size: 1rem; margin-bottom: 20px; outline: none; }
-        
         .slider-group { margin: 20px 0; text-align: left; }
         input[type=range] { width: 100%; height: 12px; border-radius: 10px; background: #333; outline: none; -webkit-appearance: none; margin-top: 10px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); cursor: pointer; border: 2px solid white; }
@@ -31,99 +28,32 @@
 <body>
 
 <div class="container">
-    <div id="statusHeader" class="hidden" style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.9rem;">
-    <span id="connLabel">Connected</span>
-    <span id="rssiVal">Signal: -- dBm</span>
+    <div id="statusHeader" class="hidden" style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.9rem; color:#00ff00;">
+      <span>● Connected</span>
+      <span id="rssiVal">Signal: -- dBm</span>
     </div>
-    
-    <script>
-        let watchTimer;
-    
-        // 1. Check for known devices on page load
-        window.onload = async () => {
-            const devices = await navigator.bluetooth.getDevices();
-            const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
-            
-            if (myDevice) {
-                // If the device is technically "connected" to the OS but not our page,
-                // we try to disconnect it first to reset the state.
-                if (myDevice.gatt.connected) {
-                    await myDevice.gatt.disconnect();
-                }
-                connectBtn.innerText = "Reconnect to ESP32";
-            }
-        };
-    
-        async function startRSSIMonitor(device) {
-            try {
-                // watchAdvertisements enables reading RSSI from the device
-                await device.watchAdvertisements();
-                device.addEventListener('advertisementreceived', (event) => {
-                    document.getElementById('rssiVal').innerText = `Signal: ${event.rssi} dBm`;
-                    // If we see the device is nearby, we could prompt the user
-                });
-            } catch (e) { console.log("RSSI Watch not supported or failed"); }
-        }
-    
-        connectBtn.onclick = async () => {
-            try {
-                const devices = await navigator.bluetooth.getDevices();
-                let device = devices.find(d => d.name === 'ESP32_EQ_Audio');
-    
-                if (!device) {
-                    device = await navigator.bluetooth.requestDevice({
-                        filters: [{ name: 'ESP32_EQ_Audio' }],
-                        optionalServices: [SERVICE_UUID]
-                    });
-                }
-    
-                const server = await device.gatt.connect();
-                bleChar = await (await server.getPrimaryService(SERVICE_UUID)).getCharacteristic(CHAR_UUID);
-                
-                document.getElementById('statusHeader').classList.remove('hidden');
-                connectBtn.classList.add('hidden');
-                mainInterface.classList.remove('hidden');
-    
-                device.addEventListener('gattserverdisconnected', () => {
-                    location.reload(); // Refreshing on hard disconnect often helps reset the state
-                });
-    
-            } catch (e) { alert("Connect Error: " + e); }
-        };
-    </script>
+
     <button id="connectBtn">Connect to ESP32</button>
 
     <div id="mainInterface" class="hidden">
         <div class="switch-container">
             <span style="font-size: 1.1rem; font-weight: bold;">Equalizer ON</span>
-            <label class="switch">
-                <input type="checkbox" id="eqToggle" checked>
-                <span class="slider-switch"></span>
-            </label>
+            <label class="switch"><input type="checkbox" id="eqToggle" checked><span class="slider-switch"></span></label>
         </div>
 
         <div id="sliderBox">
-            <label style="display:block; text-align:left; margin-bottom:5px; color:#888;">Quick Presets</label>
             <select id="presetMenu">
                 <option value="custom">Custom / Manual</option>
-                <option value="1.8,1.0,1.4">Rock (Boost Bass/High)</option>
-                <option value="1.5,1.2,1.1">Pop (Boost Vocal)</option>
-                <option value="1.4,0.9,1.6">Jazz (Crisp Highs)</option>
-                <option value="1.0,1.0,1.0">Flat</option>
+                <option value="1.8,1.0,1.4,0">Rock</option>
+                <option value="1.5,1.2,1.1,0">Pop</option>
+                <option value="1.4,0.9,1.6,0">Jazz</option>
+                <option value="1.0,1.0,1.0,0">Flat / Center</option>
             </select>
 
-            <div class="slider-group">
-                <div class="label-row"><span>Bass</span><span id="lVal">1.0</span></div>
-                <input type="range" id="low" min="0" max="3" step="0.1" value="1.0">
-            </div>
-            <div class="slider-group">
-                <div class="label-row"><span>Mid</span><span id="mVal">1.0</span></div>
-                <input type="range" id="mid" min="0" max="3" step="0.1" value="1.0">
-            </div>
-            <div class="slider-group">
-                <div class="label-row"><span>Treble</span><span id="hVal">1.0</span></div>
-                <input type="range" id="high" min="0" max="3" step="0.1" value="1.0">
-            </div>
+            <div class="slider-group"><div class="label-row"><span>Bass</span><span id="lVal">1.0</span></div><input type="range" id="low" min="0" max="3" step="0.1" value="1.0"></div>
+            <div class="slider-group"><div class="label-row"><span>Mid</span><span id="mVal">1.0</span></div><input type="range" id="mid" min="0" max="3" step="0.1" value="1.0"></div>
+            <div class="slider-group"><div class="label-row"><span>Treble</span><span id="hVal">1.0</span></div><input type="range" id="high" min="0" max="3" step="0.1" value="1.0"></div>
+            <div class="slider-group" style="border-top:1px solid #333; padding-top:15px;"><div class="label-row"><span>Balance</span><span id="balVal">Center</span></div><input type="range" id="balance" min="-1" max="1" step="0.1" value="0"></div>
         </div>
     </div>
 </div>
@@ -140,61 +70,32 @@
     const presetMenu = document.getElementById('presetMenu');
 
     window.onload = async () => {
-        // 1. Check if the browser supports getDevices()
         if (navigator.bluetooth && navigator.bluetooth.getDevices) {
-            try {
-                const devices = await navigator.bluetooth.getDevices();
-                // 2. Look for your specific device in the "permitted" list
-                const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
-                
-                if (myDevice) {
-                    console.log("Known device found. Attempting to show controls...");
-                    // 3. Show controls, but update button text to "Reconnect"
-                    connectBtn.innerText = "Reconnect to ESP32";
-                    
-                    // Optional: Automatically try to reconnect (still needs one click)
-                    myDevice.addEventListener('gattserverdisconnected', onDisconnected);
-                }
-            } catch (e) {
-                console.error("Error checking for known devices:", e);
-            }
-        }
-    };
-    
-    async function onDisconnected(event) {
-        const device = event.target;
-        console.log('Device disconnected. Controls hidden.');
-        mainInterface.classList.add('hidden');
-        connectBtn.classList.remove('hidden');
-        connectBtn.innerText = "Reconnect to ESP32";
-    }
-    
-    // Update your existing connectBtn.onclick to handle the known device
-    connectBtn.onclick = async () => {
-        try {
-            let device;
             const devices = await navigator.bluetooth.getDevices();
-            device = devices.find(d => d.name === 'ESP32_EQ_Audio');
-    
-            // If not found in known devices, request a new one
-            if (!device) {
-                device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'ESP32_EQ_Audio' }],
-                    optionalServices: [SERVICE_UUID]
-                });
+            const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
+            if (myDevice) {
+                if (myDevice.gatt.connected) await myDevice.gatt.disconnect();
+                connectBtn.innerText = "Reconnect to ESP32";
+                startRSSIMonitor(myDevice);
             }
-    
-            const server = await device.gatt.connect();
-            const service = await server.getPrimaryService(SERVICE_UUID);
-            bleChar = await service.getCharacteristic(CHAR_UUID);
-            
-            connectBtn.classList.add('hidden');
-            mainInterface.classList.remove('hidden');
-            device.addEventListener('gattserverdisconnected', onDisconnected);
-        } catch (e) {
-            alert("Connection failed: " + e);
         }
     };
+
+    async function startRSSIMonitor(device) {
+        try {
+            await device.watchAdvertisements();
+            device.addEventListener('advertisementreceived', (e) => {
+                document.getElementById('rssiVal').innerText = `Signal: ${e.rssi} dBm`;
+            });
+        } catch (e) { console.log("RSSI Watch failed"); }
+    }
+
+    async function sendData(msg) {
+        if (!bleChar) return;
+        const encoder = new TextEncoder();
+        await bleChar.writeValue(encoder.encode(msg));
+    }
+
     connectBtn.onclick = async () => {
         try {
             const device = await navigator.bluetooth.requestDevice({
@@ -202,61 +103,52 @@
                 optionalServices: [SERVICE_UUID]
             });
             const server = await device.gatt.connect();
-            const service = await server.getPrimaryService(SERVICE_UUID);
-            bleChar = await service.getCharacteristic(CHAR_UUID);
+            bleChar = await (await server.getPrimaryService(SERVICE_UUID)).getCharacteristic(CHAR_UUID);
+            document.getElementById('statusHeader').classList.remove('hidden');
             connectBtn.classList.add('hidden');
             mainInterface.classList.remove('hidden');
-        } catch (e) { alert("Connection failed: " + e); }
+            device.addEventListener('gattserverdisconnected', () => location.reload());
+        } catch (e) { alert("Connect Error: " + e); }
     };
 
-    async function sendData(msg) {
-        if (!bleChar) return;
-        const encoder = new TextEncoder();
-        try {
-            await bleChar.writeValue(encoder.encode(msg));
-        } catch (e) { console.log("BLE Write Error: ", e); }
-    }
+    async function syncAudio() {
+        const l = document.getElementById('low').value;
+        const m = document.getElementById('mid').value;
+        const h = document.getElementById('high').value;
+        const b = document.getElementById('balance').value;
 
-    async function syncEQ() {
-        if (!eqToggle.checked) {
+        document.getElementById('lVal').innerText = l;
+        document.getElementById('mVal').innerText = m;
+        document.getElementById('hVal').innerText = h;
+        document.getElementById('balVal').innerText = b == 0 ? "Center" : (b < 0 ? "Left "+Math.abs(b) : "Right "+b);
+
+        if(!eqToggle.checked) {
             sliderBox.classList.add('disabled');
-            await sendData("1.0,1.0,1.0");
+            await sendData("1.0,1.0,1.0,0.0");
         } else {
             sliderBox.classList.remove('disabled');
-            const l = document.getElementById('low').value;
-            const m = document.getElementById('mid').value;
-            const h = document.getElementById('high').value;
-            document.getElementById('lVal').innerText = l;
-            document.getElementById('mVal').innerText = m;
-            document.getElementById('hVal').innerText = h;
-            await sendData(`${l},${m},${h}`);
+            await sendData(`${l},${m},${h},${b}`);
         }
     }
 
-    // Preset logic
-    presetMenu.onchange = async () => {
-        if (presetMenu.value === "custom") return;
-        const vals = presetMenu.value.split(',');
-        document.getElementById('low').value = vals[0];
-        document.getElementById('mid').value = vals[1];
-        document.getElementById('high').value = vals[2];
-        await syncEQ();
+    eqToggle.onchange = syncAudio;
+    presetMenu.onchange = () => {
+        if(presetMenu.value === "custom") return;
+        const p = presetMenu.value.split(',');
+        ['low','mid','high','balance'].forEach((id, i) => document.getElementById(id).value = p[i]);
+        syncAudio();
     };
 
-    // UI Updates
-    eqToggle.onchange = syncEQ;
-    
-    // CHANGED TO onchange: Fires only when the finger is released
-    ['low', 'mid', 'high'].forEach(id => {
+    ['low', 'mid', 'high', 'balance'].forEach(id => {
         const el = document.getElementById(id);
-        // Visual update only on input (slide)
         el.oninput = () => {
-            document.getElementById(id + 'Val').innerText = el.value;
-            presetMenu.value = "custom"; // Mark as manual if slider moves
+            if(id === 'balance') document.getElementById('balVal').innerText = el.value == 0 ? "Center" : (el.value < 0 ? "L" : "R");
+            else document.getElementById(id + 'Val').innerText = el.value;
+            presetMenu.value = "custom";
         };
-        // Bluetooth send only on change (release)
-        el.onchange = syncEQ;
+        el.onchange = syncAudio;
     });
 </script>
 </body>
 </html>
+
