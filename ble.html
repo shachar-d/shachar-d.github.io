@@ -79,6 +79,62 @@
     const sliderBox = document.getElementById('sliderBox');
     const presetMenu = document.getElementById('presetMenu');
 
+    window.onload = async () => {
+        // 1. Check if the browser supports getDevices()
+        if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+            try {
+                const devices = await navigator.bluetooth.getDevices();
+                // 2. Look for your specific device in the "permitted" list
+                const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
+                
+                if (myDevice) {
+                    console.log("Known device found. Attempting to show controls...");
+                    // 3. Show controls, but update button text to "Reconnect"
+                    connectBtn.innerText = "Reconnect to ESP32";
+                    
+                    // Optional: Automatically try to reconnect (still needs one click)
+                    myDevice.addEventListener('gattserverdisconnected', onDisconnected);
+                }
+            } catch (e) {
+                console.error("Error checking for known devices:", e);
+            }
+        }
+    };
+    
+    async function onDisconnected(event) {
+        const device = event.target;
+        console.log('Device disconnected. Controls hidden.');
+        mainInterface.classList.add('hidden');
+        connectBtn.classList.remove('hidden');
+        connectBtn.innerText = "Reconnect to ESP32";
+    }
+    
+    // Update your existing connectBtn.onclick to handle the known device
+    connectBtn.onclick = async () => {
+        try {
+            let device;
+            const devices = await navigator.bluetooth.getDevices();
+            device = devices.find(d => d.name === 'ESP32_EQ_Audio');
+    
+            // If not found in known devices, request a new one
+            if (!device) {
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'ESP32_EQ_Audio' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+            }
+    
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            bleChar = await service.getCharacteristic(CHAR_UUID);
+            
+            connectBtn.classList.add('hidden');
+            mainInterface.classList.remove('hidden');
+            device.addEventListener('gattserverdisconnected', onDisconnected);
+        } catch (e) {
+            alert("Connection failed: " + e);
+        }
+    };
     connectBtn.onclick = async () => {
         try {
             const device = await navigator.bluetooth.requestDevice({
