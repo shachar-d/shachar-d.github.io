@@ -70,41 +70,70 @@
     const presetMenu = document.getElementById('presetMenu');
 
     window.onload = async () => {
-        if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+    // 1. Load All Settings from LocalStorage first
+    ['low', 'mid', 'high', 'balance'].forEach(id => {
+        const saved = localStorage.getItem('eq_' + id);
+        const el = document.getElementById(id);
+        if (saved !== null && el) {
+            el.value = saved;
+            // Update labels to match saved values
+            if (id === 'balance') {
+                document.getElementById('balVal').innerText = (saved == 0) ? "Center" : (saved < 0 ? "Left " + Math.abs(saved) : "Right " + saved);
+            } else {
+                document.getElementById(id + 'Val').innerText = saved;
+            }
+        }
+    });
+
+    // Load Toggle State
+    const savedToggle = localStorage.getItem('eq_enabled');
+    if (savedToggle !== null) {
+        eqToggle.checked = (savedToggle === 'true');
+        if (!eqToggle.checked) sliderBox.classList.add('disabled');
+    }
+
+    // 2. Check for known devices ONCE
+    if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+        try {
             const devices = await navigator.bluetooth.getDevices();
             const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
             if (myDevice) {
-                if (myDevice.gatt.connected) await myDevice.gatt.disconnect();
                 connectBtn.innerText = "Reconnect to ESP32";
+                // If the device object exists, we can try to watch ads
                 startRSSIMonitor(myDevice);
             }
-        }
-        // Load sliders
-        ['low', 'mid', 'high', 'balance'].forEach(id => {
-            const saved = localStorage.getItem('eq_' + id);
-            if (saved !== null) {
-                document.getElementById(id).value = saved;
-                // Update labels manually on load
-                if(id === 'balance') document.getElementById('balVal').innerText = saved == 0 ? "Center" : (saved < 0 ? "L" : "R");
-                else document.getElementById(id + 'Val').innerText = saved;
-            }
-        });
+        } catch (e) { console.log("Device check failed", e); }
+    }
+};
 
-        // Load Toggle State
-        const savedToggle = localStorage.getItem('eq_enabled');
-        if (savedToggle !== null) eqToggle.checked = (savedToggle === 'true');
+// Fixed syncAudio to ensure storage and labels are identical
+async function syncAudio() {
+    const l = document.getElementById('low').value;
+    const m = document.getElementById('mid').value;
+    const h = document.getElementById('high').value;
+    const b = document.getElementById('balance').value;
 
-        // Check for known devices
-        if (navigator.bluetooth && navigator.bluetooth.getDevices) {
-            const devices = await navigator.bluetooth.getDevices();
-            const myDevice = devices.find(d => d.name === 'ESP32_EQ_Audio');
-            if (myDevice) {
-                if (myDevice.gatt.connected) await myDevice.gatt.disconnect();
-                connectBtn.innerText = "Reconnect to ESP32";
-                startRSSIMonitor(myDevice);
-            }
-        }
-    };
+    // SAVE TO LOCAL STORAGE
+    localStorage.setItem('eq_low', l);
+    localStorage.setItem('eq_mid', m);
+    localStorage.setItem('eq_high', h);
+    localStorage.setItem('eq_balance', b);
+    localStorage.setItem('eq_enabled', eqToggle.checked);
+    
+    // UPDATE LABELS
+    document.getElementById('lVal').innerText = l;
+    document.getElementById('mVal').innerText = m;
+    document.getElementById('hVal').innerText = h;
+    document.getElementById('balVal').innerText = (b == 0) ? "Center" : (b < 0 ? "Left " + Math.abs(b) : "Right " + b);
+
+    if(!eqToggle.checked) {
+        sliderBox.classList.add('disabled');
+        await sendData("1.0,1.0,1.0,0.0");
+    } else {
+        sliderBox.classList.remove('disabled');
+        await sendData(`${l},${m},${h},${b}`);
+    }
+}
 
     async function startRSSIMonitor(device) {
         try {
@@ -136,32 +165,6 @@
             device.addEventListener('gattserverdisconnected', () => location.reload());
         } catch (e) { alert("Connect Error: " + e); }
     };
-
-    async function syncAudio() {
-        const l = document.getElementById('low').value;
-        const m = document.getElementById('mid').value;
-        const h = document.getElementById('high').value;
-        const b = document.getElementById('balance').value;
-        // --- 2. SAVE TO LOCAL STORAGE ---
-        localStorage.setItem('eq_low', l);
-        localStorage.setItem('eq_mid', m);
-        localStorage.setItem('eq_high', h);
-        localStorage.setItem('eq_balance', b);
-        localStorage.setItem('eq_enabled', eqToggle.checked);
-        
-        document.getElementById('lVal').innerText = l;
-        document.getElementById('mVal').innerText = m;
-        document.getElementById('hVal').innerText = h;
-        document.getElementById('balVal').innerText = b == 0 ? "Center" : (b < 0 ? "Left "+Math.abs(b) : "Right "+b);
-
-        if(!eqToggle.checked) {
-            sliderBox.classList.add('disabled');
-            await sendData("1.0,1.0,1.0,0.0");
-        } else {
-            sliderBox.classList.remove('disabled');
-            await sendData(`${l},${m},${h},${b}`);
-        }
-    }
 
     eqToggle.onchange = syncAudio;
     presetMenu.onchange = () => {
