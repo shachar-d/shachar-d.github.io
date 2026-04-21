@@ -123,6 +123,9 @@
                 return;
             }
 
+            // Clear the handler briefly to "flush" the pipe
+            zoomInput.onmidimessage = null; 
+            updateStatus("Clearing MIDI buffers...");
             zoomInput.onmidimessage = handleMidiMessage;
             
             // Reset state
