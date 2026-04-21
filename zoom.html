@@ -74,7 +74,7 @@
 <body>
 
 <div class="container">
-    <h2>MS-50G Preset Manager [v0.3]</h2>
+    <h2>MS-50G Preset Manager [v0.4]</h2>
     <div id="status">Status: Waiting to connect...</div>
     <div class="controls">
         <button id="connectBtn">Connect & Read Device</button>
@@ -87,195 +87,169 @@
     let zoomInput = null;
     let zoomOutput = null;
     let currentPatchIndex = 0;
+    let retryCount = 0;
     let extractedPatches = [];
     let timeoutId = null;
 
-    // Zoom MS-50G Device ID
     const DEVICE_ID = 0x58; 
+    const MAX_RETRIES = 3;
 
     document.getElementById('connectBtn').addEventListener('click', startMidiProcess);
     document.getElementById('submitBtn').addEventListener('click', submitData);
 
     async function startMidiProcess() {
         if (!navigator.requestMIDIAccess) {
-            updateStatus("Web MIDI API not supported in this browser. Please use Chrome/Edge.", "red");
+            updateStatus("Web MIDI not supported.", "red");
             return;
         }
 
         try {
-            updateStatus("Requesting MIDI access...");
-            // sysex: true is required to send and receive system exclusive messages
             const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
             
-            for (let input of midiAccess.inputs.values()) {
-                if (input.name.toUpperCase().includes('MS-50G') || input.name.toUpperCase().includes('ZOOM')) {
-                    zoomInput = input;
-                }
-            }
-            for (let output of midiAccess.outputs.values()) {
-                if (output.name.toUpperCase().includes('MS-50G') || output.name.toUpperCase().includes('ZOOM')) {
-                    zoomOutput = output;
-                }
-            }
+            // מציאת המכשיר
+            zoomInput = Array.from(midiAccess.inputs.values()).find(i => i.name.includes('MS-50G') || i.name.includes('ZOOM'));
+            zoomOutput = Array.from(midiAccess.outputs.values()).find(o => o.name.includes('MS-50G') || o.name.includes('ZOOM'));
 
             if (!zoomInput || !zoomOutput) {
-                updateStatus("Zoom MS-50G not found. Please check USB connection.", "red");
+                updateStatus("Device not found. Check USB.", "red");
                 return;
             }
 
-            // Clear the handler briefly to "flush" the pipe
-            zoomInput.onmidimessage = null; 
-            updateStatus("Clearing MIDI buffers...");
-            zoomInput.onmidimessage = handleMidiMessage;
-            
-            // Reset state
+            // איפוס והכנה
             extractedPatches = [];
             currentPatchIndex = 0;
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('jsonOutput').value = "";
+            retryCount = 0;
+            zoomInput.onmidimessage = handleMidiMessage;
             
-            // Start reading process
+            updateStatus("Starting read...");
             requestNextPatch();
 
         } catch (err) {
-            console.error(err);
-            updateStatus("MIDI Access Denied or Error: " + err.message, "red");
+            updateStatus("Error: " + err.message, "red");
         }
     }
 
     function requestNextPatch() {
         if (currentPatchIndex >= 48) {
-            updateStatus("Complete!", "green");
+            updateStatus("Success! Building JSON...", "green");
             generateJsonStructure();
             return;
         }
-    
-        // Send the Program Change
+
+        updateStatus(`Reading ${currentPatchIndex + 1}/48 (Try ${retryCount + 1})...`);
+
+        // 1. מעבר פאטץ' (Program Change)
         zoomOutput.send([0xC0, currentPatchIndex]);
-    
-        // INCREASED DELAY: Give the Zoom 400ms to switch its internal DSP
-        // Successive runs often need more "breathing room" than the first run
+
+        // 2. המתנה של 350ms שהמכשיר יסיים לטעון את הפאטץ'
         setTimeout(() => {
-            zoomOutput.send([0xF0, 0x52, 0x00, DEVICE_ID, 0x29, 0xF7]);
-            
+            // הגדרת ה-Timeout לפני שליחת הבקשה
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
-                console.warn(`Device didn't respond to Patch ${currentPatchIndex + 1}. Retrying...`);
-                // Instead of moving to the next patch and giving a generic name, 
-                // we stay on this index and try one more time.
-                requestNextPatch(); 
-            }, 1500); 
-        }, 400); 
+                handleTimeout();
+            }, 1500);
+
+            // 3. שליחת בקשת הנתונים (SysEx Request)
+            zoomOutput.send([0xF0, 0x52, 0x00, DEVICE_ID, 0x29, 0xF7]);
+        }, 350);
     }
 
     function handleMidiMessage(event) {
-        let data = event.data;
+        const data = event.data;
         
-        // Identify Zoom MS-Series Patch Data Response: starts with F0 52 00 [DevID] 28
+        // בדיקה אם זו תשובת ה-SysEx המיוחלת (F0 52 00 58 28)
         if (data[0] === 0xF0 && data[1] === 0x52 && data[4] === 0x28) {
             clearTimeout(timeoutId);
             
-            let patchName = decodePatchName(data);
-            extractedPatches.push(patchName);
+            const name = decodePatchName(data);
+            console.log(`Patch ${currentPatchIndex}: ${name}`);
             
+            extractedPatches[currentPatchIndex] = name || `Patch ${currentPatchIndex + 1}`;
+            
+            // הצלחה - עוברים לפאטץ' הבא ומאפסים ניסיונות
             currentPatchIndex++;
+            retryCount = 0;
+            
+            // הפסקה קטנה כדי לתת ל-Buffer להתנקות
+            setTimeout(requestNextPatch, 50);
+        }
+    }
+
+    function handleTimeout() {
+        console.warn(`Timeout on patch ${currentPatchIndex + 1}`);
+        if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            requestNextPatch(); // ניסיון חוזר לאותו אינדקס
+        } else {
+            console.error("Giving up on this patch, moving to next.");
+            extractedPatches[currentPatchIndex] = `Patch ${currentPatchIndex + 1} (Error)`;
+            currentPatchIndex++;
+            retryCount = 0;
             requestNextPatch();
         }
     }
 
     function decodePatchName(sysexData) {
-        // Remove Header (F0 52 00 58 28) and Footer (F7)
         let payload = sysexData.slice(5, -1);
-        
-        // Decode Zoom's 8-to-7 bit MIDI packing
         let decoded = [];
         for (let i = 0; i < payload.length; i += 8) {
-            let msbBits = payload[i];
+            let msb = payload[i];
             for (let j = 0; j < 7; j++) {
                 if (i + j + 1 < payload.length) {
                     let byte = payload[i + j + 1];
-                    // Apply the Most Significant Bit if the flag is set
-                    if ((msbBits & (1 << j)) !== 0) {
-                        byte |= 0x80;
-                    }
+                    if ((msb & (1 << j)) !== 0) byte |= 0x80;
                     decoded.push(byte);
                 }
             }
         }
-        
-        // In the MS-50G decoded payload (typically 120 bytes), the 10-character patch name sits at the end.
+        // שליפת 10 התווים האחרונים (שם הפאטץ')
         let nameBytes = decoded.slice(110, 120);
-        
-        // Convert ASCII and clean up non-printable characters or trailing nulls
-        let name = String.fromCharCode(...nameBytes).replace(/[^\x20-\x7E]/g, '').trim();
-        
-        return name || "Unnamed";
+        return String.fromCharCode(...nameBytes).replace(/[^\x20-\x7E]/g, '').trim();
     }
 
     function generateJsonStructure() {
-        let banksArray = [];
-        
-        // Create 6 Banks, 8 effects per bank
-        for (let b = 0; b < 6; b++) {
-            let effectIndexes = [];
-            let effectNames = [];
-            
-            for(let e = 0; e < 8; e++) {
-                let absoluteIndex = (b * 8) + e;
-                effectIndexes.push(absoluteIndex + 1); // Device effects map 1-48
-                effectNames.push(extractedPatches[absoluteIndex]);
+        let banks = [];
+        for (let i = 0; i < 6; i++) {
+            let start = i * 8;
+            let bankEffects = [];
+            let bankNames = [];
+            for (let j = 0; j < 8; j++) {
+                bankEffects.push(start + j + 1);
+                bankNames.push(extractedPatches[start + j] || `Patch ${start + j + 1}`);
             }
-            
-            banksArray.push({
-                name: `Bank${b}`,
-                effects: effectIndexes,
-                effectsDesc: effectNames,
+            banks.push({
+                name: `Bank${i}`,
+                effects: bankEffects,
+                effectsDesc: bankNames,
                 desc: "Default Bank"
             });
         }
-
-        const finalJson = { banks: banksArray };
-        const jsonString = JSON.stringify(finalJson, null, 2);
-        
-        document.getElementById('jsonOutput').value = jsonString;
+        const finalJson = { banks };
+        document.getElementById('jsonOutput').value = JSON.stringify(finalJson, null, 2);
         document.getElementById('submitBtn').disabled = false;
-        updateStatus("JSON ready for submission.", "#00ff00");
     }
 
-    function submitData() {
-        const jsonStr = document.getElementById('jsonOutput').value;
-        const targetUrl = 'http://192.168.4.1/submit';
+    async function submitData() {
+        const config = document.getElementById('jsonOutput').value;
+        updateStatus("Submitting...");
         
-        updateStatus("Submitting to module...", "yellow");
-        
-        // Pack into URL-encoded form data "config=..."
-        const formData = new URLSearchParams();
-        formData.append('config', jsonStr);
-
-        fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                updateStatus("Successfully submitted configuration!", "#00ff00");
-            } else {
-                throw new Error(`HTTP ${response.status}`);
-            }
-        })
-        .catch(error => {
-            console.error('Submission failed:', error);
-            updateStatus(`Submission failed: ${error.message}`, "red");
-        });
+        try {
+            const response = await fetch('http://192.168.4.1/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `config=${encodeURIComponent(config)}`
+            });
+            if (response.ok) updateStatus("Sent successfully!", "green");
+            else updateStatus("Server error: " + response.status, "red");
+        } catch (e) {
+            updateStatus("Post failed (CORS?): " + e.message, "red");
+        }
     }
 
     function updateStatus(msg, color = "#ff9800") {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = "Status: " + msg;
-        statusEl.style.color = color;
+        const s = document.getElementById('status');
+        s.innerText = "Status: " + msg;
+        s.style.color = color;
     }
 </script>
 
