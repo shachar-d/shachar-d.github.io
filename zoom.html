@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoom MS-50G Preset Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #connectBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #connectBtn:hover { background-color: #45a049; }
+        #submitBtn {
+            background-color: #008CBA;
+            color: white;
+        }
+        #submitBtn:disabled {
+            background-color: #555555;
+            cursor: not-allowed;
+            color: #888888;
+        }
+        #submitBtn:hover:not(:disabled) { background-color: #007bb5; }
+        textarea {
+            width: 100%;
+            height: 400px;
+            background-color: #121212;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        #status {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>MS-50G MIDI Configuration Sync</h2>
+    <div id="status">Status: Waiting to connect...</div>
+    <div class="controls">
+        <button id="connectBtn">Connect & Read Device</button>
+        <button id="submitBtn" disabled>Submit to 192.168.4.1</button>
+    </div>
+    <textarea id="jsonOutput" readonly placeholder="JSON data will appear here..."></textarea>
+</div>
+
+<script>
+    let zoomInput = null;
+    let zoomOutput = null;
+    let currentPatchIndex = 0;
+    let extractedPatches = [];
+    let timeoutId = null;
+
+    // Zoom MS-50G Device ID
+    const DEVICE_ID = 0x58; 
+
+    document.getElementById('connectBtn').addEventListener('click', startMidiProcess);
+    document.getElementById('submitBtn').addEventListener('click', submitData);
+
+    async function startMidiProcess() {
+        if (!navigator.requestMIDIAccess) {
+            updateStatus("Web MIDI API not supported in this browser. Please use Chrome/Edge.", "red");
+            return;
+        }
+
+        try {
+            updateStatus("Requesting MIDI access...");
+            // sysex: true is required to send and receive system exclusive messages
+            const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+            
+            for (let input of midiAccess.inputs.values()) {
+                if (input.name.toUpperCase().includes('MS-50G') || input.name.toUpperCase().includes('ZOOM')) {
+                    zoomInput = input;
+                }
+            }
+            for (let output of midiAccess.outputs.values()) {
+                if (output.name.toUpperCase().includes('MS-50G') || output.name.toUpperCase().includes('ZOOM')) {
+                    zoomOutput = output;
+                }
+            }
+
+            if (!zoomInput || !zoomOutput) {
+                updateStatus("Zoom MS-50G not found. Please check USB connection.", "red");
+                return;
+            }
+
+            zoomInput.onmidimessage = handleMidiMessage;
+            
+            // Reset state
+            extractedPatches = [];
+            currentPatchIndex = 0;
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('jsonOutput').value = "";
+            
+            // Start reading process
+            requestNextPatch();
+
+        } catch (err) {
+            console.error(err);
+            updateStatus("MIDI Access Denied or Error: " + err.message, "red");
+        }
+    }
+
+    function requestNextPatch() {
+        if (currentPatchIndex >= 48) {
+            updateStatus("Reading complete! Building JSON...", "green");
+            generateJsonStructure();
+            return;
+        }
+
+        updateStatus(`Reading patch ${currentPatchIndex + 1} of 48...`);
+
+        // 1. Send Program Change (0xC0) to switch to the target patch
+        zoomOutput.send([0xC0, currentPatchIndex]);
+
+        // 2. Wait a brief moment for the pedal to switch, then request patch data via SysEx
+        setTimeout(() => {
+            // SysEx Request Patch: F0 52 00 58 29 F7
+            zoomOutput.send([0xF0, 0x52, 0x00, DEVICE_ID, 0x29, 0xF7]);
+            
+            // Setup a timeout to prevent hanging if a MIDI packet is dropped
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                console.warn(`Timeout reading patch ${currentPatchIndex + 1}`);
+                extractedPatches.push(`Patch ${currentPatchIndex + 1}`);
+                currentPatchIndex++;
+                requestNextPatch();
+            }, 600);
+        }, 50);
+    }
+
+    function handleMidiMessage(event) {
+        let data = event.data;
+        
+        // Identify Zoom MS-Series Patch Data Response: starts with F0 52 00 [DevID] 28
+        if (data[0] === 0xF0 && data[1] === 0x52 && data[4] === 0x28) {
+            clearTimeout(timeoutId);
+            
+            let patchName = decodePatchName(data);
+            extractedPatches.push(patchName);
+            
+            currentPatchIndex++;
+            requestNextPatch();
+        }
+    }
+
+    function decodePatchName(sysexData) {
+        // Remove Header (F0 52 00 58 28) and Footer (F7)
+        let payload = sysexData.slice(5, -1);
+        
+        // Decode Zoom's 8-to-7 bit MIDI packing
+        let decoded = [];
+        for (let i = 0; i < payload.length; i += 8) {
+            let msbBits = payload[i];
+            for (let j = 0; j < 7; j++) {
+                if (i + j + 1 < payload.length) {
+                    let byte = payload[i + j + 1];
+                    // Apply the Most Significant Bit if the flag is set
+                    if ((msbBits & (1 << j)) !== 0) {
+                        byte |= 0x80;
+                    }
+                    decoded.push(byte);
+                }
+            }
+        }
+        
+        // In the MS-50G decoded payload (typically 120 bytes), the 10-character patch name sits at the end.
+        let nameBytes = decoded.slice(110, 120);
+        
+        // Convert ASCII and clean up non-printable characters or trailing nulls
+        let name = String.fromCharCode(...nameBytes).replace(/[^\x20-\x7E]/g, '').trim();
+        
+        return name || "Unnamed";
+    }
+
+    function generateJsonStructure() {
+        let banksArray = [];
+        
+        // Create 6 Banks, 8 effects per bank
+        for (let b = 0; b < 6; b++) {
+            let effectIndexes = [];
+            let effectNames = [];
+            
+            for(let e = 0; e < 8; e++) {
+                let absoluteIndex = (b * 8) + e;
+                effectIndexes.push(absoluteIndex + 1); // Device effects map 1-48
+                effectNames.push(extractedPatches[absoluteIndex]);
+            }
+            
+            banksArray.push({
+                name: `Bank${b}`,
+                effects: effectIndexes,
+                effectsDesc: effectNames,
+                desc: "Default Bank"
+            });
+        }
+
+        const finalJson = { banks: banksArray };
+        const jsonString = JSON.stringify(finalJson, null, 2);
+        
+        document.getElementById('jsonOutput').value = jsonString;
+        document.getElementById('submitBtn').disabled = false;
+        updateStatus("JSON ready for submission.", "#00ff00");
+    }
+
+    function submitData() {
+        const jsonStr = document.getElementById('jsonOutput').value;
+        const targetUrl = 'http://192.168.4.1/submit';
+        
+        updateStatus("Submitting to module...", "yellow");
+        
+        // Pack into URL-encoded form data "config=..."
+        const formData = new URLSearchParams();
+        formData.append('config', jsonStr);
+
+        fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                updateStatus("Successfully submitted configuration!", "#00ff00");
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        })
+        .catch(error => {
+            console.error('Submission failed:', error);
+            updateStatus(`Submission failed: ${error.message}`, "red");
+        });
+    }
+
+    function updateStatus(msg, color = "#ff9800") {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = "Status: " + msg;
+        statusEl.style.color = color;
+    }
+</script>
+
+</body>
+</html>
