@@ -74,7 +74,7 @@
 <body>
 
 <div class="container">
-    <h2>MS-50G Preset Manager [v0.2]</h2>
+    <h2>MS-50G Preset Manager [v0.3]</h2>
     <div id="status">Status: Waiting to connect...</div>
     <div class="controls">
         <button id="connectBtn">Connect & Read Device</button>
@@ -145,30 +145,27 @@
 
     function requestNextPatch() {
         if (currentPatchIndex >= 48) {
-            updateStatus("Reading complete! Building JSON...", "green");
+            updateStatus("Complete!", "green");
             generateJsonStructure();
             return;
         }
-
-        updateStatus(`Reading patch ${currentPatchIndex + 1} of 48...`);
-
-        // 1. Send Program Change (0xC0) to switch to the target patch
+    
+        // Send the Program Change
         zoomOutput.send([0xC0, currentPatchIndex]);
-
-        // 2. Wait a brief moment for the pedal to switch, then request patch data via SysEx
+    
+        // INCREASED DELAY: Give the Zoom 400ms to switch its internal DSP
+        // Successive runs often need more "breathing room" than the first run
         setTimeout(() => {
-            // SysEx Request Patch: F0 52 00 58 29 F7
             zoomOutput.send([0xF0, 0x52, 0x00, DEVICE_ID, 0x29, 0xF7]);
             
-            // Setup a timeout to prevent hanging if a MIDI packet is dropped
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
-                console.warn(`Timeout reading patch ${currentPatchIndex + 1}`);
-                extractedPatches.push(`Patch ${currentPatchIndex + 1}`);
-                currentPatchIndex++;
-                requestNextPatch();
-            }, 600);
-        }, 50);
+                console.warn(`Device didn't respond to Patch ${currentPatchIndex + 1}. Retrying...`);
+                // Instead of moving to the next patch and giving a generic name, 
+                // we stay on this index and try one more time.
+                requestNextPatch(); 
+            }, 1500); 
+        }, 400); 
     }
 
     function handleMidiMessage(event) {
